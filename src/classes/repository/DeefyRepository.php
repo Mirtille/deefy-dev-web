@@ -122,4 +122,10 @@ class DeefyRepository {
         }
         return $playlists;
     }
+
+    public function isPlaylistOwner(int $idUser, int $idPlaylist): bool {
+        $stmt = $this->pdo->prepare("SELECT 1 FROM user2playlist WHERE id_user = :id_user AND id_pl = :id_pl");
+        $stmt->execute(['id_user' => $idUser, 'id_pl' => $idPlaylist]);
+        return (bool)$stmt->fetchColumn();
+    }
 }
