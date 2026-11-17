@@ -140,7 +140,6 @@ class DeefyRepository {
         $pl = new Playlist($row['nom']);
         $pl->setId((int)$row['id']);
 
-        // Chargement des pistes ordonnées de la playlist
         $sqlTracks = "SELECT t.* 
                       FROM track t
                       INNER JOIN playlist2track p2t ON t.id = p2t.id_track
@@ -183,6 +182,18 @@ class DeefyRepository {
             }
             $pl->addTrackList($track);
         }
+
+        return $pl;
+    }
+
+    public function saveEmptyPlaylistForUser(Playlist $pl, int $idUser): Playlist {
+        $stmt = $this->pdo->prepare("INSERT INTO playlist (nom) VALUES (:nom)");
+        $stmt->execute(['nom' => $pl->nom]);
+        $idPl = (int)$this->pdo->lastInsertId();
+        $pl->setId($idPl);
+
+        $stmtLink = $this->pdo->prepare("INSERT INTO user2playlist (id_user, id_pl) VALUES (:id_user, :id_pl)");
+        $stmtLink->execute(['id_user' => $idUser, 'id_pl' => $idPl]);
 
         return $pl;
     }
