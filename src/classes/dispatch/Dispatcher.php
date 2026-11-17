@@ -19,12 +19,10 @@ class Dispatcher {
     }
 
     public function run(): void {
-        // Si l'action est enregistrée dans les routes, on instancie la classe correspondante
         if (isset($this->routes[$this->action])) {
             $class = $this->routes[$this->action];
             $act = new $class();
         } else {
-            // Repli sur l'action par défaut
             $act = new DefaultAction();
         }
 
@@ -40,15 +38,16 @@ class Dispatcher {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Deefy</title>
+            <link rel="stylesheet" href="css/style.css">
         </head>
         <body>
             <header>
                 <h1>Deefy App</h1>
                 <nav>
                     <a href="?action=default">Accueil</a> |
-                    <a href="?action=playlist">Voir Playlist</a> |
-                    <a href="?action=add-playlist">Créer Playlist</a> |
-                    <a href="?action=add-user">Inscription</a>
+                    <a href="?action=my-playlists">Mes playlists</a> |
+                    <a href="?action=playlist">Playlist courante</a> |
+                    <a href="?action=add-playlist">Créer une playlist</a>
                 </nav>
                 <hr>
             </header>
