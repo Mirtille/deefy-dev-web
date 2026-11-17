@@ -12,15 +12,14 @@ use iutnc\deefy\action\AddUserAction;
 
 session_start();
 
-// Initialisation de la configuration BDD (une seule fois pour toute l'app)[cite: 45, 47]
 DeefyRepository::setConfig(__DIR__ . '/config.db.ini');
 
 $dispatcher = new Dispatcher();
 
 $dispatcher->addRoute('default', DefaultAction::class)
+           ->addRoute('my-playlists', DisplayUserPlaylistsAction::class)
            ->addRoute('playlist', DisplayPlaylistAction::class)
            ->addRoute('add-playlist', AddPlaylistAction::class)
-           ->addRoute('add-track', AddPodcastTrackAction::class)
-           ->addRoute('add-user', AddUserAction::class);
+           ->addRoute('add-track', AddPodcastTrackAction::class);
 
 $dispatcher->run();
