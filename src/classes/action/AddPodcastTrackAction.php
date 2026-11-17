@@ -3,22 +3,32 @@
 namespace iutnc\deefy\action;
 
 use iutnc\deefy\audio\tracks\PodcastTrack;
-use iutnc\deefy\render\AudioListRenderer;
+use iutnc\deefy\repository\DeefyRepository;
 
 class AddPodcastTrackAction extends Action {
     public function execute(): string {
         if (!isset($_SESSION['playlist'])) {
-            return "<p>Veuillez d'abord <a href='?action=add-playlist'>créer une playlist</a> avant d'ajouter des pistes.</p>";
+            return "<p>Veuillez d'abord sélectionner une playlist dans <a href='?action=my-playlists'>Mes playlists</a> ou <a href='?action=add-playlist'>en créer une</a>.</p>";
         }
+
+        $idPl = (int)$_SESSION['playlist']->id;
+        $repo = DeefyRepository::getInstance();
 
         if ($this->http_method === 'GET') {
             return <<<HTML
+            <h2>Ajouter une piste à la playlist courante</h2>
             <form method="post" action="?action=add-track" enctype="multipart/form-data">
                 <div>
-                    <label>Titre : <input type="text" name="titre" required></label>
+                    <label>Titre : <input type="text" name="titre" required maxlength="100"></label>
                 </div>
                 <div>
-                    <label>Auteur : <input type="text" name="auteur"></label>
+                    <label>Genre : <input type="text" name="genre" maxlength="30" placeholder="Ex: rock, podcast..."></label>
+                </div>
+                <div>
+                    <label>Durée (en secondes) : <input type="number" name="duree" min="1" max="36000" value="180" required></label>
+                </div>
+                <div>
+                    <label>Auteur : <input type="text" name="auteur" maxlength="100"></label>
                 </div>
                 <div>
                     <label>Date : <input type="date" name="date"></label>
@@ -33,44 +43,47 @@ class AddPodcastTrackAction extends Action {
             HTML;
         }
 
-        // Requête POST
-        $titre = filter_var($_POST['titre'] ?? '', FILTER_SANITIZE_SPECIAL_CHARS);
-        $auteur = filter_var($_POST['auteur'] ?? '', FILTER_SANITIZE_SPECIAL_CHARS);
-        $date = filter_var($_POST['date'] ?? '', FILTER_SANITIZE_SPECIAL_CHARS);
+        $titre = trim($_POST['titre'] ?? '');
+        $genre = trim($_POST['genre'] ?? '');
+        $duree = filter_input(INPUT_POST, 'duree', FILTER_VALIDATE_INT) ?: 0;
+        $auteur = trim($_POST['auteur'] ?? '');
+        $date = trim($_POST['date'] ?? '');
 
-        // Vérification de l'upload du fichier audio
+        if ($titre === '') {
+            return "<p class='error'>Le titre de la piste est obligatoire.</p>";
+        }
+
         if (!isset($_FILES['userfile']) || $_FILES['userfile']['error'] !== UPLOAD_ERR_OK) {
-            return "<p>Erreur lors du téléchargement du fichier audio.</p>";
+            return "<p class='error'>Erreur lors du téléchargement du fichier audio.</p>";
         }
 
         $originalName = $_FILES['userfile']['name'];
-        $mimeType = $_FILES['userfile']['type'];
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $detectedMime = $finfo->file($_FILES['userfile']['tmp_name']);
 
-        // Contrôles de sécurité demandés dans le sujet
-        if (substr($originalName, -4) !== '.mp3' || str_ends_with($originalName, '.php')) {
-            return "<p>Erreur : seul le format .mp3 est autorisé (fichiers .php strictement interdits).</p>";
+        if (!str_ends_with(strtolower($originalName), '.mp3') || str_contains(strtolower($originalName), '.php') || !in_array($detectedMime, ['audio/mpeg', 'audio/mp3', 'application/octet-stream'], true)) {
+            return "<p class='error'>Erreur : seul le format audio .mp3 valide est autorisé.</p>";
         }
 
-        // Sauvegarde dans /audio avec un nom unique
         $uniqueFilename = uniqid('track_', true) . '.mp3';
         $destPath = __DIR__ . '/../../../audio/' . $uniqueFilename;
 
         if (!move_uploaded_file($_FILES['userfile']['tmp_name'], $destPath)) {
-            return "<p>Échec de l'enregistrement du fichier sur le serveur.</p>";
+            return "<p class='error'>Échec de l'enregistrement du fichier sur le serveur.</p>";
         }
 
-        // Instanciation de la piste
         $track = new PodcastTrack($titre, $uniqueFilename);
-        if (method_exists($track, 'setAuteur')) $track->setAuteur($auteur);
-        if (method_exists($track, 'setDate')) $track->setDate($date);
+        if ($genre !== '' && method_exists($track, 'setGenre')) $track->setGenre($genre);
+        if ($duree > 0 && method_exists($track, 'setDuree')) $track->setDuree($duree);
+        if ($auteur !== '' && method_exists($track, 'setAuteur')) $track->setAuteur($auteur);
+        if ($date !== '' && method_exists($track, 'setDate')) $track->setDate($date);
 
-        // Ajout à la playlist en session
-        $_SESSION['playlist']->addTrackList($track);
+        $track = $repo->saveTrack($track);
+        $repo->addTrackToPlaylist((int)$track->id, $idPl);
 
-        $renderer = new AudioListRenderer($_SESSION['playlist']);
-        $html = $renderer->render(1);
-        $html .= '<p><a href="?action=add-track">Ajouter encore une piste</a></p>';
+        $_SESSION['playlist'] = $repo->findPlaylistById($idPl);
 
-        return $html;
+        header("Location: ?action=playlist");
+        exit();
     }
 }
