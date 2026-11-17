@@ -2,4 +2,4 @@
 /config/db.config.ini
 .env
 .DS_Store
-EOF
+EOF/config.db.ini
