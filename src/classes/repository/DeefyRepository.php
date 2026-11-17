@@ -14,7 +14,6 @@ class DeefyRepository {
     private static ?DeefyRepository $instance = null;
     private static array $config = [];
 
-    // Constructeur privé (Singleton)[cite: 45]
     private function __construct(array $conf) {
         $dsn = "{$conf['driver']}:host={$conf['host']};dbname={$conf['database']};charset=utf8";
         $this->pdo = new PDO($dsn, $conf['username'], $conf['password'], [
@@ -25,7 +24,6 @@ class DeefyRepository {
         ]);
     }
 
-    // Chargement de la config depuis le fichier .ini[cite: 38, 45, 47]
     public static function setConfig(string $file): void {
         $conf = parse_ini_file($file);
         if ($conf === false) {
@@ -34,7 +32,6 @@ class DeefyRepository {
         self::$config = $conf;
     }
 
-    // Récupération de l'instance unique
     public static function getInstance(): DeefyRepository {
         if (is_null(self::$instance)) {
             if (empty(self::$config)) {
@@ -45,7 +42,6 @@ class DeefyRepository {
         return self::$instance;
     }
 
-    // 1. Récupérer toutes les playlists (sans leurs pistes)
     public function findAllPlaylists(): array {
         $stmt = $this->pdo->query("SELECT id, nom FROM playlist");
         $playlists = [];
@@ -57,7 +53,6 @@ class DeefyRepository {
         return $playlists;
     }
 
-    // 2. Sauvegarder une playlist vide[cite: 45, 46, 47]
     public function saveEmptyPlaylist(Playlist $pl): Playlist {
         $stmt = $this->pdo->prepare("INSERT INTO playlist (nom) VALUES (:nom)");
         $stmt->execute(['nom' => $pl->nom ?? $pl->nom]);
@@ -65,7 +60,6 @@ class DeefyRepository {
         return $pl;
     }
 
-    // 3. Sauvegarder une piste (gère AlbumTrack et PodcastTrack selon les colonnes de la table)[cite: 41, 47]
     public function saveTrack(AudioTrack $tr): AudioTrack {
         $sql = "INSERT INTO track (titre, genre, duree, filename, type, artiste_album, titre_album, annee_album, numero_album, auteur_podcast, date_posdcast) 
                 VALUES (:titre, :genre, :duree, :filename, :type, :artiste, :titre_album, :annee, :numero, :auteur, :date_pod)";
@@ -93,9 +87,7 @@ class DeefyRepository {
         return $tr;
     }
 
-    // 4. Associer une piste existante à une playlist existante[cite: 47]
     public function addTrackToPlaylist(int $idTrack, int $idPlaylist): void {
-        // Trouver le numéro de la prochaine piste dans la playlist
         $queryNum = "SELECT COALESCE(MAX(no_piste_dans_liste), 0) + 1 AS next_num 
                      FROM playlist2track 
                      WHERE id_pl = :id_pl";
@@ -103,7 +95,6 @@ class DeefyRepository {
         $stmtNum->execute(['id_pl' => $idPlaylist]);
         $nextNum = (int)$stmtNum->fetch(PDO::FETCH_ASSOC)['next_num'];
 
-        // Insertion dans la table de liaison Many-to-Many[cite: 47]
         $insert = "INSERT INTO playlist2track (id_pl, id_track, no_piste_dans_liste) 
                    VALUES (:id_pl, :id_track, :no_piste)";
         $stmtInsert = $this->pdo->prepare($insert);
@@ -112,5 +103,23 @@ class DeefyRepository {
             'id_track' => $idTrack,
             'no_piste' => $nextNum
         ]);
+    }
+
+    public function findPlaylistsByUser(int $idUser): array {
+        $sql = "SELECT p.id, p.nom 
+                FROM playlist p
+                INNER JOIN user2playlist u2p ON p.id = u2p.id_pl
+                WHERE u2p.id_user = :id_user
+                ORDER BY p.id DESC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['id_user' => $idUser]);
+
+        $playlists = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $pl = new Playlist($row['nom']);
+            $pl->setId((int)$row['id']);
+            $playlists[] = $pl;
+        }
+        return $playlists;
     }
 }
