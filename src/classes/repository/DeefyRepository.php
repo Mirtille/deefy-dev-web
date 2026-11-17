@@ -226,4 +226,22 @@ class DeefyRepository {
         }
         return $tr;
     }
+
+    public function addTrackToPlaylist(int $idTrack, int $idPlaylist): void {
+        $queryNum = "SELECT COALESCE(MAX(no_piste_dans_liste), 0) + 1 AS next_num 
+                     FROM playlist2track 
+                     WHERE id_pl = :id_pl";
+        $stmtNum = $this->pdo->prepare($queryNum);
+        $stmtNum->execute(['id_pl' => $idPlaylist]);
+        $nextNum = (int)$stmtNum->fetch(PDO::FETCH_ASSOC)['next_num'];
+
+        $insert = "INSERT INTO playlist2track (id_pl, id_track, no_piste_dans_liste) 
+                   VALUES (:id_pl, :id_track, :no_piste)";
+        $stmtInsert = $this->pdo->prepare($insert);
+        $stmtInsert->execute([
+            'id_pl' => $idPlaylist,
+            'id_track' => $idTrack,
+            'no_piste' => $nextNum
+        ]);
+    }
 }
