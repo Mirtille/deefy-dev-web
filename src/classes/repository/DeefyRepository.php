@@ -128,4 +128,62 @@ class DeefyRepository {
         $stmt->execute(['id_user' => $idUser, 'id_pl' => $idPlaylist]);
         return (bool)$stmt->fetchColumn();
     }
+
+    public function findPlaylistById(int $idPlaylist): ?Playlist {
+        $stmt = $this->pdo->prepare("SELECT id, nom FROM playlist WHERE id = :id");
+        $stmt->execute(['id' => $idPlaylist]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return null;
+        }
+
+        $pl = new Playlist($row['nom']);
+        $pl->setId((int)$row['id']);
+
+        // Chargement des pistes ordonnées de la playlist
+        $sqlTracks = "SELECT t.* 
+                      FROM track t
+                      INNER JOIN playlist2track p2t ON t.id = p2t.id_track
+                      WHERE p2t.id_pl = :id_pl
+                      ORDER BY p2t.no_piste_dans_liste ASC";
+        $stmtTracks = $this->pdo->prepare($sqlTracks);
+        $stmtTracks->execute(['id_pl' => $idPlaylist]);
+
+        while ($tRow = $stmtTracks->fetch(PDO::FETCH_ASSOC)) {
+            if ($tRow['type'] === 'A') {
+                $track = new AlbumTrack(
+                    $tRow['titre'],
+                    $tRow['filename'] ?? '',
+                    $tRow['titre_album'] ?? '',
+                    (int)($tRow['numero_album'] ?? 1)
+                );
+                if (!empty($tRow['artiste_album']) && method_exists($track, 'setArtiste')) {
+                    $track->setArtiste($tRow['artiste_album']);
+                }
+                if (!empty($tRow['annee_album']) && method_exists($track, 'setAnnee')) {
+                    $track->setAnnee((int)$tRow['annee_album']);
+                }
+            } else {
+                $track = new PodcastTrack($tRow['titre'], $tRow['filename'] ?? '');
+                if (!empty($tRow['auteur_podcast']) && method_exists($track, 'setAuteur')) {
+                    $track->setAuteur($tRow['auteur_podcast']);
+                }
+                if (!empty($tRow['date_posdcast']) && method_exists($track, 'setDate')) {
+                    $track->setDate($tRow['date_posdcast']);
+                }
+            }
+            if (!empty($tRow['genre']) && method_exists($track, 'setGenre')) {
+                $track->setGenre($tRow['genre']);
+            }
+            if (!empty($tRow['duree']) && method_exists($track, 'setDuree')) {
+                $track->setDuree((int)$tRow['duree']);
+            }
+            if (method_exists($track, 'setId')) {
+                $track->setId((int)$tRow['id']);
+            }
+            $pl->addTrackList($track);
+        }
+
+        return $pl;
+    }
 }
