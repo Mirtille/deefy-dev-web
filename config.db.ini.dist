@@ -1,0 +1,5 @@
+driver=mysql
+host=127.0.0.1
+database=deefy
+username=votre_utilisateur
+password=votre_mot_de_passe
