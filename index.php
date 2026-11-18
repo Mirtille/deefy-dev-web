@@ -5,10 +5,10 @@ require_once 'vendor/autoload.php';
 use iutnc\deefy\dispatch\Dispatcher;
 use iutnc\deefy\repository\DeefyRepository;
 use iutnc\deefy\action\DefaultAction;
+use iutnc\deefy\action\DisplayUserPlaylistsAction;
 use iutnc\deefy\action\DisplayPlaylistAction;
 use iutnc\deefy\action\AddPlaylistAction;
 use iutnc\deefy\action\AddPodcastTrackAction;
-use iutnc\deefy\action\AddUserAction;
 
 session_start();
 
