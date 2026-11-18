@@ -171,16 +171,13 @@ class DeefyRepository {
                     $track->setDate($tRow['date_posdcast']);
                 }
             }
-            if (!empty($tRow['genre']) && method_exists($track, 'setGenre')) {
-                $track->setGenre($tRow['genre']);
-            }
             if (!empty($tRow['duree']) && method_exists($track, 'setDuree')) {
                 $track->setDuree((int)$tRow['duree']);
             }
             if (method_exists($track, 'setId')) {
                 $track->setId((int)$tRow['id']);
             }
-            $pl->addTrackList($track);
+            $pl->addTrackList([$track]);
         }
 
         return $pl;
@@ -196,23 +193,5 @@ class DeefyRepository {
         $stmtLink->execute(['id_user' => $idUser, 'id_pl' => $idPl]);
 
         return $pl;
-    }
-
-    public function addTrackToPlaylist(int $idTrack, int $idPlaylist): void {
-        $queryNum = "SELECT COALESCE(MAX(no_piste_dans_liste), 0) + 1 AS next_num 
-                     FROM playlist2track 
-                     WHERE id_pl = :id_pl";
-        $stmtNum = $this->pdo->prepare($queryNum);
-        $stmtNum->execute(['id_pl' => $idPlaylist]);
-        $nextNum = (int)$stmtNum->fetch(PDO::FETCH_ASSOC)['next_num'];
-
-        $insert = "INSERT INTO playlist2track (id_pl, id_track, no_piste_dans_liste) 
-                   VALUES (:id_pl, :id_track, :no_piste)";
-        $stmtInsert = $this->pdo->prepare($insert);
-        $stmtInsert->execute([
-            'id_pl' => $idPlaylist,
-            'id_track' => $idTrack,
-            'no_piste' => $nextNum
-        ]);
     }
 }
