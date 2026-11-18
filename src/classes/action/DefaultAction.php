@@ -2,10 +2,11 @@
 
 namespace iutnc\deefy\action;
 
+use iutnc\deefy\render\AudioListRenderer;
+
 class DefaultAction extends Action {
     public function execute(): string {
         $html = "<h2>Bienvenue sur Deefy !</h2>";
-        $html .= "<p>Gérez vos playlists et écoutez vos morceaux favoris.</p>";
 
         if (isset($_SESSION['playlist'])) {
             $renderer = new AudioListRenderer($_SESSION['playlist']);
