@@ -73,7 +73,6 @@ class AddPodcastTrackAction extends Action {
         }
 
         $track = new PodcastTrack($titre, $uniqueFilename);
-        if ($genre !== '' && method_exists($track, 'setGenre')) $track->setGenre($genre);
         if ($duree > 0 && method_exists($track, 'setDuree')) $track->setDuree($duree);
         if ($auteur !== '' && method_exists($track, 'setAuteur')) $track->setAuteur($auteur);
         if ($date !== '' && method_exists($track, 'setDate')) $track->setDate($date);
