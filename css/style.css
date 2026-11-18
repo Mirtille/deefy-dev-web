@@ -25,7 +25,7 @@ header {
 }
 
 header h1 {
-    color: #1db954;
+    color: #611db9;
     font-size: 1.8rem;
     letter-spacing: -0.5px;
 }
@@ -71,7 +71,7 @@ p {
 }
 
 a {
-    color: #1db954;
+    color: #632c97;
     text-decoration: none;
 }
 
@@ -117,7 +117,7 @@ audio {
 /* Boutons */
 .btn, button {
     display: inline-block;
-    background-color: #1db954;
+    background-color: #602bb6;
     color: #000000;
     font-weight: 700;
     font-size: 0.95rem;
@@ -131,7 +131,7 @@ audio {
 }
 
 .btn:hover, button:hover {
-    background-color: #1ed760;
+    background-color: #753bac;
     text-decoration: none;
     transform: scale(1.02);
 }
@@ -172,7 +172,7 @@ input[type="file"] {
 
 input:focus {
     outline: none;
-    border-color: #1db954;
+    border-color: #7f2fb4;
 }
 
 /* Messages d'état */
