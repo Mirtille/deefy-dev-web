@@ -3,3 +3,4 @@
 .env
 .DS_Store
 EOF/config.db.ini
+config.db.ini
