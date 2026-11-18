@@ -198,35 +198,6 @@ class DeefyRepository {
         return $pl;
     }
 
-    public function saveTrack(AudioTrack $tr): AudioTrack {
-        $sql = "INSERT INTO track (titre, genre, duree, filename, type, artiste_album, titre_album, annee_album, numero_album, auteur_podcast, date_posdcast) 
-                VALUES (:titre, :genre, :duree, :filename, :type, :artiste, :titre_album, :annee, :numero, :auteur, :date_pod)";
-        
-        $stmt = $this->pdo->prepare($sql);
-
-        $isAlbum = ($tr instanceof AlbumTrack);
-        $isPodcast = ($tr instanceof PodcastTrack);
-
-        $stmt->execute([
-            'titre' => $tr->titre,
-            'genre' => $tr->genre ?? null,
-            'duree' => $tr->duree ?? 0,
-            'filename' => $tr->nomFichier ?? ($tr->filename ?? ''),
-            'type' => $isAlbum ? 'A' : ($isPodcast ? 'P' : null),
-            'artiste' => $isAlbum ? ($tr->artiste ?? null) : null,
-            'titre_album' => $isAlbum ? ($tr->album ?? null) : null,
-            'annee' => $isAlbum ? ($tr->annee ?? null) : null,
-            'numero' => $isAlbum ? ($tr->numeroPiste ?? null) : null,
-            'auteur' => $isPodcast ? ($tr->auteur ?? null) : null,
-            'date_pod' => $isPodcast ? ($tr->date ?? null) : null,
-        ]);
-
-        if (method_exists($tr, 'setId')) {
-            $tr->setId((int)$this->pdo->lastInsertId());
-        }
-        return $tr;
-    }
-
     public function addTrackToPlaylist(int $idTrack, int $idPlaylist): void {
         $queryNum = "SELECT COALESCE(MAX(no_piste_dans_liste), 0) + 1 AS next_num 
                      FROM playlist2track 
